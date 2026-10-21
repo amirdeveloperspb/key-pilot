@@ -1,0 +1,5 @@
+node_modules/
+*.vsix
+.DS_Store
+native/keypilot-stats
+native/keypilot-stats.exe

@@ -1,0 +1,25 @@
+{
+  "name": "key-pilot",
+  "displayName": "KeyPilot",
+  "description": "Управление VS Code через текстовые команды",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "keyPilot.open",
+        "title": "KeyPilot: Open"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "keyPilot.open",
+        "key": "ctrl+k ctrl+p",
+        "mac": "cmd+k cmd+p"
+      }
+    ]
+  }
+}
