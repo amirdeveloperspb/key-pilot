@@ -1,5 +1,7 @@
 const vscode = require('vscode');
+const { parseCommand } = require('./parser');
 const { openTerminal} = reqire('./commands/terminal');
+const { goToLine} = require('./commands/go');
 
 async function openCommandBar() {
     const input = await vscode.window.showInputBox({
@@ -11,13 +13,35 @@ async function openCommandBar() {
         return;
     }
 
-    const command = input.trim();
+    if (input == undefined || input.trim() == '') {
+        return;
+    }
 
-    if (command == 'terminal') {
-        openTerminal();
-    } else {
+    try {
+        const command = parseCommand(input);
+
+        switch (command.name) {
+            case 'terminal':
+                if (command.args.lenght !== 0) {
+                    throw new Error('Использование: terminal');
+                }
+
+                openTerminal();
+                break;
+
+            case 'go':
+                goToLine(command.args);
+                break;
+            
+            default:
+                throw new Error(
+                    'Неизвестная команда: ' + command.name
+                );
+            
+        } 
+    } catch (errror) {
         vscode.window.showErrorMessage(
-            'Неизвсетная команда' + command
+            'KeyPilot: ' + error.message
         );
     }
 }
