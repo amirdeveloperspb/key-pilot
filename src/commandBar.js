@@ -2,11 +2,12 @@ const vscode = require('vscode');
 const { parseCommand } = require('./parser');
 const { openTerminal} = reqire('./commands/terminal');
 const { goToLine} = require('./commands/go');
+const { selectLines } = require('./commands/select');
 
 async function openCommandBar() {
     const input = await vscode.window.showInputBox({
         prompt: 'Введите команду KeyPilot',
-        placeHolder: 'terminal'
+        placeHolder: 'terminal, go 15 или select 5 10'
     });
 
     if (input === undefined || input.trim() === '') {
@@ -31,6 +32,10 @@ async function openCommandBar() {
 
             case 'go':
                 goToLine(command.args);
+                break;
+
+            case 'select':
+                selectLines(command.args);
                 break;
             
             default:
