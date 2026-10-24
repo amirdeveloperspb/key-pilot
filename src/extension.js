@@ -1,14 +1,29 @@
 const vscode = require('vscode');
+const { openCommandBar } = require('./commandBar');
+const { createHistory } = require('./history');
+const { createModes } = require('./modes');
 
-const { openCommandBar} = require('./commandBar');
-
+/** Создаёт общие ресурсы и регистрирует команды расширения. */
 function activate(context) {
-    const command = vscode.commands.registerCommand(
-        'keyPilot.open',
-        openCommandBar
-    );
+    const history = createHistory(context);
+    const modes = createModes(context);
 
-    context.subscriptions.push(command);
+    const services = { context, history, modes };
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'keyPilot.open',
+            () => openCommandBar(services)
+        ),
+        vscode.commands.registerCommand(
+            'keyPilot.insert',
+            () => modes.set('insert')
+        ),
+        vscode.commands.registerCommand(
+            'keyPilot.navigate',
+            () => modes.set('navigate')
+        )
+    );
 }
 
 module.exports = { activate };

@@ -1,8 +1,9 @@
+/** Иерархия команд и описания для подсказок. */
 const commandTree = {
     file: {
         new: {
             action: 'file.new',
-            description: 'Создать файл: file new notes.txt'
+            description: 'Создать файл: file new "my notes.txt"'
         },
         open: {
             action: 'file.open',
@@ -10,12 +11,12 @@ const commandTree = {
         },
         save: {
             action: 'file.save',
-            description: 'Сохрани текущий файл'
+            description: 'Сохранить текущий файл'
         }
     },
     terminal: {
         action: 'terminal',
-        description: 'Открыть терминал'
+        description: 'Показать терминал'
     },
     go: {
         action: 'go',
@@ -24,9 +25,28 @@ const commandTree = {
     select: {
         action: 'select',
         description: 'Выделить строки: select 5 10'
+    },
+    mode: {
+        insert: {
+            action: 'mode.insert',
+            description: 'Включить обычный ввод'
+        },
+        navigate: {
+            action: 'mode.navigate',
+            description: 'Включить навигацию h/j/k/l'
+        }
+    },
+    stats: {
+        action: 'stats',
+        description: 'Статистика файла через программу C++'
+    },
+    history: {
+        action: 'history',
+        description: 'Повторить команду из истории'
     }
 };
 
+/** Разбивает строку на слова, учитывая двойные кавычки. */
 function tokenize(text) {
     const parts = [];
     let current = '';
@@ -34,10 +54,10 @@ function tokenize(text) {
     let started = false;
 
     for (const character of text) {
-        if (character == '"') {
+        if (character === '"') {
             quoted = !quoted;
             started = true;
-        } else if (/\s./test(charachter) && !quoted) {
+        } else if (/\s/.test(character) && !quoted) {
             if (started) {
                 parts.push(current);
                 current = '';
@@ -56,11 +76,13 @@ function tokenize(text) {
     if (started) {
         parts.push(current);
     }
+
     return parts;
 }
 
+/** Находит команду в дереве и возвращает оставшиеся аргументы. */
 function parseCommand(text) {
-    const parts = tokensize(text);
+    const parts = tokenize(text);
     let node = commandTree;
     let index = 0;
 
@@ -69,7 +91,7 @@ function parseCommand(text) {
 
         if (!name || !Object.hasOwn(node, name)) {
             throw new Error(
-                'Ожидается:' + Object.keys(node).join(', ')
+                'Ожидается: ' + Object.keys(node).join(', ')
             );
         }
 
@@ -83,6 +105,7 @@ function parseCommand(text) {
     };
 }
 
+/** Преобразует дерево в список подсказок рекурсивным обходом. */
 function getCommandList(node = commandTree, prefix = '') {
     const result = [];
 

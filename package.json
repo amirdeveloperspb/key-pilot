@@ -2,16 +2,28 @@
   "name": "key-pilot",
   "displayName": "KeyPilot",
   "description": "Управление VS Code через текстовые команды",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.85.0"
   },
   "main": "./src/extension.js",
+  "scripts": {
+    "build:native": "c++ -std=c++17 -O2 native/stats.cpp -o native/keypilot-stats",
+    "test": "node --test tests/*.test.js"
+  },
   "contributes": {
     "commands": [
       {
         "command": "keyPilot.open",
         "title": "KeyPilot: Open"
+      },
+      {
+        "command": "keyPilot.insert",
+        "title": "KeyPilot: Insert Mode"
+      },
+      {
+        "command": "keyPilot.navigate",
+        "title": "KeyPilot: Navigation Mode"
       }
     ],
     "keybindings": [
@@ -19,6 +31,36 @@
         "command": "keyPilot.open",
         "key": "ctrl+k ctrl+p",
         "mac": "cmd+k cmd+p"
+      },
+      {
+        "command": "keyPilot.navigate",
+        "key": "escape",
+        "when": "editorTextFocus && !inputFocus && !editorReadonly && !suggestWidgetVisible && !findWidgetVisible && !inSnippetMode && !editorHasSelection"
+      },
+      {
+        "command": "keyPilot.insert",
+        "key": "i",
+        "when": "editorTextFocus && !inputFocus && keyPilot.navigation"
+      },
+      {
+        "command": "cursorLeft",
+        "key": "h",
+        "when": "editorTextFocus && !inputFocus && keyPilot.navigation"
+      },
+      {
+        "command": "cursorDown",
+        "key": "j",
+        "when": "editorTextFocus && !inputFocus && keyPilot.navigation"
+      },
+      {
+        "command": "cursorUp",
+        "key": "k",
+        "when": "editorTextFocus && !inputFocus && keyPilot.navigation"
+      },
+      {
+        "command": "cursorRight",
+        "key": "l",
+        "when": "editorTextFocus && !inputFocus && keyPilot.navigation"
       }
     ]
   }

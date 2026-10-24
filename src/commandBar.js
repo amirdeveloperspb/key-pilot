@@ -1,99 +1,178 @@
 const vscode = require('vscode');
-const { parseCommand } = require('./parser');
-const { openTerminal} = reqire('./commands/terminal');
-const { goToLine} = require('./commands/go');
+const { parseCommand, getCommandList } = require('./parser');
+const { openTerminal } = require('./commands/terminal');
+const { goToLine } = require('./commands/go');
 const { selectLines } = require('./commands/select');
-const { handleFIle } = require('./commands/file');
+const { handleFile } = require('./commands/file');
+const { showStats } = require('./commands/stats');
 
-async function executeCommand(text) {
-    const command = parseCommand(text);
+/** Выполняет разобранную команду через соответствующий обработчик. */
+async function executeCommand(text, services) {
+    const { action, args } = parseCommand(text);
 
-    if (command.action.startsWith('file.')) {
-        await handleFIle(command.action, command.args);
+    const withoutArguments = [
+        'terminal',
+        'mode.insert',
+        'mode.navigate',
+        'stats',
+        'history'
+    ];
+
+    if (withoutArguments.includes(action) && args.length !== 0) {
+        throw new Error('Эта команда не принимает аргументы.');
+    }
+
+    if (action.startsWith('file.')) {
+        await handleFile(action, args);
         return;
     }
 
-    switch (command.action) {
+    switch (action) {
         case 'terminal':
-            if (command.args.lenght !== 0) {
-                throw new Error('ИСпользование: terminal');
-            }
-
             openTerminal();
             break;
 
         case 'go':
-            goToLine(command.args);
+            goToLine(args);
             break;
 
         case 'select':
-            selsectLines(command.args);
+            selectLines(args);
             break;
-        
+
+        case 'mode.insert':
+            await services.modes.set('insert');
+            break;
+
+        case 'mode.navigate':
+            await services.modes.set('navigate');
+            break;
+
+        case 'stats':
+            await showStats(services.context);
+            break;
+
+        case 'history': {
+            const items = services.history.list();
+
+            if (items.length === 0) {
+                vscode.window.showInformationMessage('История пуста.');
+                return;
+            }
+
+            const selected = await vscode.window.showQuickPick(
+                items,
+                { placeHolder: 'Выбери команду для повторения' }
+            );
+
+            if (selected) {
+                await executeCommand(selected, services);
+                await services.history.add(selected);
+            }
+
+            break;
+        }
+
         default:
-            throw new Error('неизвестная команда.')
+            throw new Error('Неизвестное действие: ' + action);
     }
 }
 
-function openCommandBar() {
-    const picker = vscode.window.createQuickPick();
-    
-    picker.title = 'KeyPilot';
-    picker.placeholder = 'Ввудите команду или выбирете подсказку';
+/** Формирует подсказки и подходящие записи истории. */
+function makeSuggestions(value, history) {
+    const text = value.trim();
+    const query = text.toLowerCase();
 
-    const commands = getCommandList();
+    const commands = getCommandList()
+        .filter(item => item.label.includes(query))
+        .map(item => ({
+            label: item.label,
+            description: item.description,
+            text: item.label,
+            run: false,
+            alwaysShow: true
+        }));
 
-    function refresh() {
-        const text = picker.value.trim();
-        const query = text.toLowerCase();
+    const recent = history.list()
+        .filter(item => item.toLowerCase().includes(query))
+        .slice(0, 5)
+        .map(item => ({
+            label: item,
+            description: 'Повторить из истории',
+            text: item,
+            run: true,
+            alwaysShow: true
+        }));
 
-        const suggestions = commands
-            .filter(command => command.label.includes(query))
-            .map(command => ({
-                label: command.label,
-                description:command.description,
-                text: command.albel,
-                run: false,
-                alwaysShow: true
-            }));
-        
-        pricker.items = text
-            ? [
-                {
-                    label: 'Выполнить: ' + text,
-                    text,
-                    run: true,
-                    alwaysShow: true
-                },
-                ...suggestions
-            ]
-            : suggestions;
+    if (!text) {
+        return [...commands, ...recent];
     }
 
-    const changeListner = picker.onDidChangeValue(refesh);
+    return [
+        {
+            label: 'Выполнить: ' + text,
+            text,
+            run: true,
+            alwaysShow: true
+        },
+        ...commands,
+        ...recent
+    ];
+}
 
-    const acceptListner = picker.onDidAccept(async () => {
+/** Открывает командную строку с подсказками и обработкой ошибок. */
+function openCommandBar(services) {
+    const picker = vscode.window.createQuickPick();
+
+    picker.title = 'KeyPilot';
+    picker.placeholder = 'file, terminal, go, select, mode, stats, history';
+
+    /** Перестраивает список при изменении ввода. */
+    function refresh() {
+        picker.items = makeSuggestions(
+            picker.value,
+            services.history
+        );
+    }
+
+    const changeListener = picker.onDidChangeValue(refresh);
+
+    const acceptListener = picker.onDidAccept(async () => {
         const selected = picker.selectedItems[0];
+
+        if (!selected) {
+            return;
+        }
 
         if (!selected.run) {
             picker.value = selected.text + ' ';
             return;
         }
 
+        const text = selected.text.trim();
+
+        if (!text) {
+            return;
+        }
+
         picker.hide();
 
         try {
-            await executeCommand(selected.text);
+            await executeCommand(text, services);
+
+            if (parseCommand(text).action !== 'history') {
+                await services.history.add(text);
+            }
         } catch (error) {
-            vscode.window.showErrorMEssage(
-                'KeyPilot:' + error.message
+            vscode.window.showErrorMessage(
+                'KeyPilot: ' + error.message
             );
         }
     });
 
     picker.onDidHide(() => {
-        changeListner.dispose();
-        acceptListner.dispose();
+        changeListener.dispose();
+        acceptListener.dispose();
         picker.dispose();
     });
 
@@ -102,5 +181,3 @@ function openCommandBar() {
 }
 
 module.exports = { openCommandBar };
-
-

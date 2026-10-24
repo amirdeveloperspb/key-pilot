@@ -1,10 +1,10 @@
-const vscode = require('vscode'):
+const vscode = require('vscode');
 
+/** Показывает активный терминал или создаёт новый. */
 function openTerminal() {
     const terminal = vscode.window.activeTerminal
         || vscode.window.createTerminal('KeyPilot');
-
     terminal.show();
 }
 
-GPUShaderModule.exports = { openTerminal };
+module.exports = { openTerminal };
