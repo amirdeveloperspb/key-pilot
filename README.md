@@ -5,7 +5,7 @@
 
 Лабораторная работа №3 по ИСРПО.
 IDE: настольный Visual Studio Code.
-Версия: 0.1.0.
+Версия: 0.1.1.
 
 ## Назначение
 
@@ -118,7 +118,7 @@ Esc закрывает строку без выполнения.
 В папке проекта выполнить `npm run package`, затем:
 
 ```bash
-code --install-extension ./key-pilot-0.1.0-darwin-arm64.vsix --force
+code --install-extension ./key-pilot-0.1.1-darwin-arm64.vsix --force
 ```
 
 Если VS Code уже открыт, вызвать `Developer: Reload Window` через палитру команд.
